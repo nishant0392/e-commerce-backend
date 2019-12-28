@@ -9,11 +9,13 @@ const Mailer = require('../lib/EmailLib')
 const logger = require('../lib/loggerLib')
 const time = require('../lib/timeLib')
 const JWT = require('../lib/tokenLib')
+const SMSLib = require('../lib/SMSLib')
 const findQuery = require('../lib/mongooseQueryLib/findQuery')
 
 //Importing the models here 
 const UserModel = mongoose.model('User')
 const AuthModel = mongoose.model('Auth')
+const OTPModel = mongoose.model('OTP')
 
 // Global variables 
 let userId = "";
@@ -58,22 +60,17 @@ let signup = (req, res) => {
         let newUser = new UserModel({
 
             userId: shortid.generate(),
-            firstName: req.body.firstName,
-            lastName: req.body.lastName,
-            role: req.body.role,
-            countryCode: req.body.countryCode,
             mobileNumber: req.body.mobile,
-            email: req.body.email,
             password: bcryptLib.hashPassword(req.body.password),
             lastModifiedOn: time.now(),
             createdOn: time.now()
 
         }) // end new User model
 
-        let queryResponse = findQuery.findOne('User', { email: req.body.email }, newUser, true, true);
+        let queryResponse = findQuery.findOne('User', { mobileNumber: req.body.mobile }, newUser, true, true);
         queryResponse.then((userAccount) => {
             if (userAccount.userId !== newUser.userId) {
-                let apiResponse = Response.generate(true, 'Signup Failed!! User already exists with this Email.', 403, null);
+                let apiResponse = Response.generate(true, 'Signup Failed!! User already exists with this number.', 403, null);
                 res.send(apiResponse);
             }
             else {
@@ -88,20 +85,17 @@ let signup = (req, res) => {
                 console.log('Error:', error)
                 res.send(error)
             })
+
     } // END createUserAccount()
 
 
     // Validate the request body parameters
-    let apiResponse = validation.validateParams(req.body, ['firstName', 'lastName', 'countryCode', 'mobile', 'email', 'password']);
+    let apiResponse = validation.validateParams(req.body, ['mobile', 'password']);
     if (apiResponse.error) {
         res.send(apiResponse);
         return;
     }
-    if (!util.isEmailValid(req.body.email)) {
-        apiResponse = Response.generate(true, 'Signup Failed!! Invalid Email address.', 400, null);
-        res.send(apiResponse);
-        return;
-    }
+
     if (!util.isPasswordValid(req.body.password)) {
         apiResponse = Response.generate(true, 'Signup Failed!! Invalid Password.', 400, null);
         res.send(apiResponse);
@@ -114,15 +108,15 @@ let signup = (req, res) => {
 
 
 /* Validate Login Input */
-let validateLogin = async (email, password) => {
+let validateLogin = async (loginType, email_OR_mobile, password) => {
 
-    // validate email
-    let queryResponse = await findQuery.findOne('User', { email: email }, null, null, null);
-    console.log('query Response:', queryResponse)
+    let query = (loginType === 'EMAIL') ? { email: email_OR_mobile } : { mobileNumber: email_OR_mobile };
+
+    // validate email/mobile
+    let queryResponse = await findQuery.findOne('User', query, null, null, null);
 
     // validate Password
-    let compareResponse = await bcryptLib.comparePasswordWithResponse(password, queryResponse.password);
-    console.log('compare Response:', compareResponse)
+    await bcryptLib.comparePasswordWithResponse(password, queryResponse.password);
 
     let userDetailsObj = queryResponse.toObject();
     let properties = ['password', '_id', '__v', 'createdOn', 'lastModifiedOn'];
@@ -149,14 +143,25 @@ let validateLogin = async (email, password) => {
 let login = (req, res) => {
 
     // validate the request body parameters
-    let apiResponse = validation.validateParams(req.body, ['email', 'password']);
-    if (apiResponse.error) {
+    if (!req.body.password || !(req.body.email || req.body.mobile)) {
+        let apiResponse = Response.generate(true, 'One or More Parameters were missing.', 400, null);
         res.send(apiResponse);
         return;
     }
 
+    let loginType, email_OR_mobile;
+
+    if (req.body.email) {
+        loginType = 'EMAIL';
+        email_OR_mobile = req.body.email;
+    }
+    else {
+        loginType = 'MOBILE';
+        email_OR_mobile = req.body.mobile;
+    }
+
     // validate Login
-    validateLogin(req.body.email, req.body.password)
+    validateLogin(loginType, email_OR_mobile, req.body.password)
         .then(generateToken)
         .then(saveToken)
         .then((resolveData) => {
@@ -246,6 +251,7 @@ let forgotPassword = (req, res) => {
     })
 } // END forgotPassword()
 
+
 /**
  * function for Password Reset.
  */
@@ -280,6 +286,7 @@ let resetPassword = (req, res) => {
 
 } // END resetPassword() 
 
+
 /**
  * function to logout user.
  * auth params: userId.
@@ -302,10 +309,142 @@ let logout = (req, res) => {
 } // end of the logout function.
 
 
+/**
+ * Send OTP to any mobile number and save OTP on database for verification. 
+ * @param {string} req.body.mobile Mobile number to which OTP is to be sent.
+ */
+let sendOTP = (req, res) => {
+
+    let generateOTP = () => {
+        let OTP = Math.round((0.1 + Math.random()) * 1000000);
+        return OTP;
+    }
+
+    let mobile = req.body.mobile;
+
+    if (!mobile) {
+        let apiResponse = Response.generate(true, 'Mobile number parameter is missing!!', 400, null);
+        res.send(apiResponse); return;
+    }
+
+    // Valid mobile number
+    if (typeof mobile === 'string' && mobile.length === 10) {
+
+        let _mobile = Number(mobile);
+        let OTP = generateOTP();
+        let message = `${OTP} is your N-Kart code and is valid for 10 minutes. Do not share the OTP with anyone.`;
+
+        // send OTP
+        SMSLib.sendSMS(message, _mobile)
+            .then(() => {
+
+                let currentTime = new Date().getTime();
+
+                let newOTP = new OTPModel({
+                    mobileNumber: _mobile,
+                    OTP: OTP,
+                    OTP_GenerationTime: currentTime,
+                    OTP_ExpirationTime: currentTime + 10 * 60 * 1000  // expiration period is 10 minutes
+                })
+
+                // Save OTP 
+                let queryResponse = findQuery.findOne('OTP', { mobileNumber: _mobile }, newOTP, true, false);
+                queryResponse.then(
+                    (resolveValue) => {
+                        console.log('--OTP Sent and Saved:', resolveValue)
+                        let apiResponse = Response.generate(false, 'OTP has been sent to ' + mobile, 200, null);
+                        res.send(apiResponse)
+                    })
+                    .catch((error) => {
+                        console.log('--OTP Not Saved:', error)
+                    })
+
+            })
+            .catch((error) => {
+                console.log(error)
+                res.send({
+                    error: true, status: error.status, message: 'Message could not be sent to ' + mobile,
+                    Reason: error.errors
+                })
+            });
+
+    }
+
+    // Invalid Mobile number
+    else {
+        let apiResponse = Response.generate(true, 'Invalid mobile number', 403, null);
+        res.send(apiResponse)
+    }
+
+} // END sendOTP
+
+
+/**
+ * Verify OTP . 
+ * @param {string} req.body.mobile Mobile number to verify
+ * @param {string} req.body.OTP OTP sent to the respective mobile number
+ */
+let verifyOTP = (req, res) => {
+
+    let mobile = Number(req.body.mobile), OTP = Number(req.body.OTP);
+
+    if (!mobile || !OTP) {
+        let apiResponse = Response.generate(true, 'Mobile/OTP parameter is missing!!', 400, null);
+        res.send(apiResponse); return;
+    }
+
+    // compare OTP received with OTP sent(saved on DB) 
+    let queryResponse = findQuery.findOne('OTP', { mobileNumber: mobile, OTP: OTP }, null, null, null);
+    queryResponse.then(
+        (doc) => {
+
+            let apiResponse;
+
+            if (doc.isVerified) {
+                // Number already verified
+                apiResponse = Response.generate(true, 'Number already verified!!', 401, null);
+                res.send(apiResponse)
+            }
+            else {
+                // Number not verified yet
+                let currentTime = new Date().getTime();
+                if (currentTime > doc.OTP_ExpirationTime) {
+                    // OTP has expired
+                    apiResponse = Response.generate(true, 'OTP has expired!!', 403, null);
+                    res.send(apiResponse); return;
+                }
+
+                // update the row (mark number as verified)
+                findQuery.findOne('OTP', { mobileNumber: mobile, OTP: OTP }, { isVerified: true }, true, null)
+                    .then(() => {
+                        apiResponse = Response.generate(false, 'Number verified successfully!!', 200, null);
+                        res.send(apiResponse)
+                    })
+                    .catch((err) => {
+                        console.log(err)
+                        apiResponse = Response.generate(true, 'Some internal error', 500, null);
+                        res.send(apiResponse)
+                    })
+            }
+        })
+        .catch((error) => {
+            console.log(error)
+            if (error.status === 404) {
+                apiResponse = Response.generate(true, 'Invalid OTP', 404, null);
+                res.send(apiResponse)
+            }
+            else
+                res.send(error)
+        })
+} // END verifyOTP
+
+
 module.exports = {
     signup: signup,
     login: login,
     logout: logout,
     forgotPassword: forgotPassword,
-    resetPassword: resetPassword
+    resetPassword: resetPassword,
+    sendOTP: sendOTP,
+    verifyOTP: verifyOTP
 }

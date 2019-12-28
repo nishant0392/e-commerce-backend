@@ -7,16 +7,31 @@ const bodyParser = require('body-parser')
 const globalErrorMiddleware = require('./app/middlewares/appErrorHandler')
 const http = require('http')
 const mongoose = require('mongoose')
-const sendSMSLib = require('./app/lib/sendSMSLib')
+const session = require('express-session')
 
 
 // middlewares
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: true }));
 //app.use('/userAvatars', express.static('userAvatars'))
 
 // set the view engine to 'ejs'
 app.set('view engine', 'ejs');
+
+/** Session **/
+var sess = {
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: { maxAge: 60000 }
+};
+
+if (app.get('env') === 'production') {
+  app.set('trust proxy', 1)    // trust first proxy
+  sess.cookie.secure = true    // serve secure cookies
+}
+
+app.use(session(sess))
 
 app.use(globalErrorMiddleware.globalErrorHandler)
 
@@ -66,11 +81,6 @@ HTTP_Server.on('listening', listeningEventHandler);
 //const socketLib = require("./app/lib/socketLib");
 //socketLib.set_http_server(HTTP_Server);
 
-/*
-let OTP_msg = 'Hello Nishant Kumar!! How are you ? The OTP is 1234.';
-let receiverNo = '917204190121';   // receiver Number with country code
-sendSMSLib.sendSMS(OTP_msg, receiverNo);
-*/
 
 function errorHandler(err) {
   console.log(err)
@@ -93,7 +103,7 @@ function listeningEventHandler() {
   logger.info('HTTP Server listening on port ' + addr.port, 'App.js: listeningEventHandler', 10);
 
   // Creating Database connection
-  //mongoose.connect(appConfig.db.uri, { useNewUrlParser: true, useCreateIndex: true });
+  mongoose.connect(appConfig.db.uri, { useNewUrlParser: true, useCreateIndex: true });
 }
 
 
@@ -117,3 +127,27 @@ mongoose.connection.on('open', function (err) {
       'database connection open handler', 10)
   }
 }); // end mongoose connection open handler
+
+
+////////////////////////////
+/*
+let foo = (op) => {
+  return (op == true) ? Promise.resolve('success') : Promise.reject('failure');
+}
+
+let test = async (value) => {
+	let prom1 = await foo(value);
+  
+  console.log('prom1:', prom1);
+  return Promise.resolve('foo() resolved')
+}
+
+test(false)
+.then((resolveVal) => {
+	console.log('resolved value:', resolveVal)
+})
+.catch((error) => {
+	console.log('error:', error);
+})
+
+*/

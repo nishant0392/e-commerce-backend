@@ -1,7 +1,12 @@
 const util = require('./utilityLib')
 const Response = require('./generateResponseLib')
 
-/* Checks if all the specified properties exist and non-empty and returns a response object */
+/**
+ * Checks if all the specified properties exist and non-empty and returns a response object.
+ * @param {{}} dataObj Object to validate
+ * @param {string[]} properties Array of properties that should exist in the object.
+ * @return {{error:boolean, message:string, status:number, data:any}} Response object
+ */ 
 let validateParams = (dataObj, properties) => {
     let apiResponse = {};
     if (util.isObjectEmpty(dataObj, properties))

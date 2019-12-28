@@ -21,7 +21,10 @@ let isEmailValid = (email) => {
   return email.match(emailRegex) ? true : false;
 }
 
-/* Minimum 8 characters which contain only characters,numeric digits, underscore and first character must be a letter */
+/**
+ * Minimum 8 characters which contain only characters,numeric digits, underscore and first character must be a letter.
+ * @param {string} password Password
+ */
 let isPasswordValid = (password) => {
   let passwordRegex = /^[A-Za-z0-9]\w{7,}$/;
   return password.match(passwordRegex) ? true : false;
@@ -100,7 +103,7 @@ let deleteProperties = (object, properties) => {
 /* Update document with object's selected properties value or with other than selected properties value
  based on 'ignore' if it's true or false. */
 let updateDocument = (document, object, selectProps, ignore) => {
- 
+
   // Ignore the selected properties and assign remaining
   if (ignore) {
 
@@ -110,11 +113,13 @@ let updateDocument = (document, object, selectProps, ignore) => {
       if (documentObj.hasOwnProperty(prop))
         delete documentObj[prop];
     }
-  
+
     for (let prop in documentObj) {
+
       if (object.hasOwnProperty(prop))
         document[prop] = object[prop];
     }
+
   }
 
   // Assign the selected properties

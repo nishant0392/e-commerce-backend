@@ -29,26 +29,38 @@ let sendSMS = (message, receiverNo) => {
         path: '/send?' + data
     };
 
-    http.get(options, (response) => {
+    return new Promise((resolve, reject) => {
 
-        var str = '';
-    
-        //another chunk of data has been recieved, so append it to `str`
-        response.on('data', function (chunk) {
-            str += chunk;
-        });
-    
-        //the whole response has been recieved, so we just print it out here
-        response.on('end', function () {
-            console.log(str);
-        });
+        http.get(options, (response) => {
 
-    }).end();
-}
+            var str = '';
+
+            //another chunk of data has been received, so append it to `str`
+            response.on('data', function (chunk) {
+                str += chunk;
+            });
+
+            //the whole response has been received, so we just print it out here
+            response.on('end', function () {
+                
+                let responseObj = JSON.parse(str);
+             
+                if (responseObj.status === "success")
+                    resolve(responseObj)
+                else
+                    reject(responseObj)
+            });
+
+        }).end();
+
+    })
+
+} // END sendSMS
 
 
 module.exports = {
     sendSMS: sendSMS
 }
+
 
 

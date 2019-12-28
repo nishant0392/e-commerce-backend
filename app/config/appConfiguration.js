@@ -4,13 +4,13 @@ let appConfig = {};
 appConfig.port = process.env.PORT;
 appConfig.env = process.env.NODE_ENV;
 appConfig.allowedCorsOrigin = [
-  "http://localhost:4200", "http://nishant-kumar.com", "http://n-cart.nishant-kumar.com"
+  "http://localhost:4200", "http://nishant-kumar.com", "http://n-kart.nishant-kumar.com"
 ];
 appConfig.db = {
   uri: process.env.DB_URI
 }
 appConfig.apiVersion = '/api/v2';
-appConfig.appHost = "N-CART"
+appConfig.appHost = "N-KART"
 
 
 module.exports = {

@@ -2,7 +2,7 @@ const appConfig = require("../config/appConfiguration")
 const userManagementController = require('../controllers/userManagementController')
 const paymentController = require('../controllers/paymentController')
 const Captcha = require('../lib/CaptchaLib')
-
+const SMSLib = require('../lib/SMSLib')
 
 
 // Authorization Middlewares
@@ -32,6 +32,10 @@ let setRouter = (app) => {
 
     /* Routes related to Miscellaneous */
     app.get(baseUrl+'/getCaptcha', Captcha.getCaptcha)
+
+    app.post(baseUrl+'/sendOTP', userManagementController.sendOTP)   
+
+    app.post(baseUrl+'/verifyOTP', userManagementController.verifyOTP)    
     
 }
 

@@ -3,7 +3,7 @@ const Response = require('../../lib/generateResponseLib')
 const util = require('../../lib/utilityLib')
 const logger = require('../../lib/loggerLib')
 
-/* Finds a document and if found, updates it with upsertData in case 'insertOnlyIfNotFound' option is set to
+/** Finds a document and if found, updates it with upsertData in case 'insertOnlyIfNotFound' option is set to
    false, otherwise simply returns it.
    If not found, inserts 'upsertData' as a new document if 'upsertData' exists and 'upsert' option is set to
    true, otherwise simply returns with a 404 response. */
@@ -52,11 +52,12 @@ let findOne = (Model, query, upsertData, upsert, insertOnlyIfNotFound) => {
                 // update the document when found
                 else if (upsertData) {
 
-                    if (typeof upsertData !== 'object') {
+                    if (upsertData instanceof QueryModel) {
                         let upsertDataObj = upsertData.toObject();
                         util.updateDocument(document, upsertDataObj, ['_id', 'userId', '__v'], true);
                     }
-                    else
+
+                    else if(upsertData instanceof Object)
                         util.updateDocument(document, upsertData, ['_id', 'userId', '__v'], true);
 
                     document.save((error, savedDocument) => {
