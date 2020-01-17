@@ -40,7 +40,16 @@ const models_path = './app/models';
 const routes_path = './app/routes';
 
 app.all('*', function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "http://localhost:4200");
+  var allowedOrigins = [
+    "http://localhost:4200", "http://www.nishant-kumar.com",
+    "http://nishant-kumar.com", "https://nishant0392.github.io"
+  ];
+  var origin = req.headers.origin;
+  if(allowedOrigins.indexOf(origin) > -1){
+       res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  //res.header("Access-Control-Allow-Origin", "http://localhost:4200", "http://www.nishant-kumar.com", 
+  // "http://nishant-kumar.com");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
   res.header('Access-Control-Allow-Credentials', true);
@@ -103,7 +112,7 @@ function listeningEventHandler() {
   logger.info('HTTP Server listening on port ' + addr.port, 'App.js: listeningEventHandler', 10);
 
   // Creating Database connection
-  mongoose.connect(appConfig.db.uri, { useNewUrlParser: true, useCreateIndex: true });
+  mongoose.connect(appConfig.db.uri, { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true });
 }
 
 
@@ -127,24 +136,3 @@ mongoose.connection.on('open', function (err) {
       'database connection open handler', 10)
   }
 }); // end mongoose connection open handler
-
-
-////////////////////////////
-
-/*------------------------
-(() => {
-  function addToArray(arr, itemsArr) {
-    for(let i=0; i<itemsArr.length; i++) {
-      arr.push(itemsArr[i]);
-    }
-  }
-
-  function removeFromArray(arr, ) {
-
-  }
-  let arr1 = ['nick', 'sick'];
-  addToArray(arr1, ['pickle']);
-  console.log(arr1)
-
-})();
-//------------------------*/
