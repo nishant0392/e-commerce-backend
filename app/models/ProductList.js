@@ -2,41 +2,25 @@ const mongoose = require('mongoose');
 const time = require('../lib/timeLib')
 let Schema = mongoose.Schema;
 
-let UserSchema = new Schema({
-    userId: {
+let ProductListSchema = new Schema({
+    listId: {
         type: String,
         default: '',
         index: true,
         unique: true,
         required: true
     },
-    firstName: {
-        type: String,
-        default: ''
-    },
-    lastName: {
-        type: String,
-        default: ''
-    },
-    countryCode: {
-        type: String,
-        default: '91'
-    },
-    mobileNumber: {
-        type: Number,
-        default: 0
-    },
-    email: {
-        type: String,
-        default: ''
-    },
-    password: {
-        type: String,
-        default: '',
-    },
-    addressList: {
+    listOfItems: {
         type: Array,
         default: []
+    },
+    category: {
+        type: String,
+        default: ''
+    },
+    brand: {
+        type: String,
+        default: '',
     },
     lastModifiedOn: {
         type: Date,
@@ -49,4 +33,4 @@ let UserSchema = new Schema({
 })
 
 
-mongoose.model('User', UserSchema);
+mongoose.model('ProductList', ProductListSchema);

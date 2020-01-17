@@ -5,6 +5,7 @@ let isEmpty = (value) => {
     return false;
 }
 
+
 /* Returns true if the object misses any of the specified properties or if any property of the object
    is empty, false otherwise. */
 let isObjectEmpty = (object, properties) => {
@@ -16,10 +17,12 @@ let isObjectEmpty = (object, properties) => {
   return false;
 }
 
+
 let isEmailValid = (email) => {
   let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,4})+$/;
   return email.match(emailRegex) ? true : false;
 }
+
 
 /**
  * Minimum 8 characters which contain only characters,numeric digits, underscore and first character must be a letter.
@@ -29,6 +32,7 @@ let isPasswordValid = (password) => {
   let passwordRegex = /^[A-Za-z0-9]\w{7,}$/;
   return password.match(passwordRegex) ? true : false;
 }
+
 
 /* Returns true if two Objects/values are same, otherwise false */
 let isEqual = (object1, object2) => {
@@ -52,6 +56,7 @@ let isEqual = (object1, object2) => {
   return true;
 }
 
+
 /* Remove a specified key from an array */
 let spliceWithKey = (arr, key) => {
   for (let i = 0; i < arr.length; i++) {
@@ -61,6 +66,7 @@ let spliceWithKey = (arr, key) => {
     }
   }
 }
+
 
 /* Remove a specified key from an array of objects based on a particular property */
 let spliceWithKeyAndProperty = (arr, key, property) => {
@@ -72,6 +78,7 @@ let spliceWithKeyAndProperty = (arr, key, property) => {
   }
 }
 
+
 /* Finds a key within an array of objects. Returns the first index if found, '-1' otherwise. */
 let findObjectByProperty = (arr, property, key) => {
   for (let i = 0; i < arr.length; i++) {
@@ -81,6 +88,7 @@ let findObjectByProperty = (arr, property, key) => {
   return -1;
 }
 
+
 /* Finds a key within an array of elements. Returns the first index if found, '-1' otherwise. */
 let findKey = (arr, key) => {
   for (let i = 0; i < arr.length; i++) {
@@ -89,6 +97,7 @@ let findKey = (arr, key) => {
   }
   return -1;
 }
+
 
 /* Delete selected properties of an object */
 let deleteProperties = (object, properties) => {
@@ -100,37 +109,42 @@ let deleteProperties = (object, properties) => {
   return object;
 }
 
-/* Update document with object's selected properties value or with other than selected properties value
- based on 'ignore' if it's true or false. */
-let updateDocument = (document, object, selectProps, ignore) => {
 
-  // Ignore the selected properties and assign remaining
-  if (ignore) {
+/**
+  * Update document with given object's properties value.
+  * @param {Document} document Mongoose Document
+  * @param {{}} object Object with which to update the document
+  * @param {string[]} properties Properties of the document that are to be updated
+  * @param {boolean} overwriteArray If property's value is an Array, whether to overWrite or not. If not, merge it. (default: false)
+  */
+let updateDocument = (document, object, properties, overwriteArray) => {
 
-    let documentObj = document.toObject();
-
-    for (let prop of selectProps) {
-      if (documentObj.hasOwnProperty(prop))
-        delete documentObj[prop];
-    }
-
-    for (let prop in documentObj) {
-
-      if (object.hasOwnProperty(prop))
-        document[prop] = object[prop];
-    }
-
-  }
+  let documentObj = document.toObject();
 
   // Assign the selected properties
-  else {
-    for (let prop of selectProps) {
-      if (documentObj.hasOwnProperty(prop) && object.hasOwnProperty(prop))
+  for (let prop of properties) {
+
+    if (documentObj.hasOwnProperty(prop) && object.hasOwnProperty(prop)) {
+
+      // if property value is an array and no overwrite is allowed
+      if (document[prop] instanceof Array && !overwriteArray) {
+
+        // add to existing array
+        for (let i = 0; i < object[prop].length; i++)
+          document[prop].push(object[prop][i]);
+
+      }
+
+      // overwrite the existing array or any value
+      else
         document[prop] = object[prop];
+
     }
+
   }
 
-} // END updateObject()
+} // END updateDocument()
+
 
 module.exports = {
   isEmpty: isEmpty,

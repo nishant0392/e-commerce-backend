@@ -96,13 +96,26 @@ let signup = (req, res) => {
         return;
     }
 
+    // validate Password
     if (!util.isPasswordValid(req.body.password)) {
         apiResponse = Response.generate(true, 'Signup Failed!! Invalid Password.', 400, null);
         res.send(apiResponse);
         return;
     }
 
-    createUserAccount();
+    // check whether the number is verified or not and if verified, create a User Account.
+    isNumberVerified(Number(req.body.mobile))
+        .then(
+            (isVerified) => {
+                if (isVerified)
+                    createUserAccount();
+                else
+                    res.send(Response.generate(true, 'Number not verified yet', 401, null));
+            })
+        .catch((error) => {
+            console.log(error)
+            res.send(Response.generate(true, 'Invalid Number or not verified yet!!', 401, null));
+        })
 
 } // END signup()
 
@@ -231,7 +244,7 @@ let forgotPassword = (req, res) => {
                         userId: userId,
                         userName: userName,
                         authToken: tokenDetails.authToken,
-                        url: process.env.NODE_ENV === 'development' ? 'http://localhost:4200' : 'planner.nishant-kumar.com'
+                        url: process.env.NODE_ENV === 'development' ? 'http://localhost:4200' : 'n-kart.nishant-kumar.com'
                     }
                     // Send Email
                     Mailer.sendEmail('reset-password.ejs', viewData, emailOptions)
@@ -310,13 +323,18 @@ let logout = (req, res) => {
 
 
 /**
- * Send OTP to any mobile number and save OTP on database for verification. 
+ * Sends a 6-digit OTP to any mobile number and save OTP on database for verification. 
  * @param {string} req.body.mobile Mobile number to which OTP is to be sent.
  */
 let sendOTP = (req, res) => {
 
+    // Generates a 6-digit OTP and returns it
     let generateOTP = () => {
         let OTP = Math.round((0.1 + Math.random()) * 1000000);
+
+        if (OTP > 999999)
+            OTP = Math.floor(OTP / 10);
+
         return OTP;
     }
 
@@ -439,6 +457,61 @@ let verifyOTP = (req, res) => {
 } // END verifyOTP
 
 
+/**
+ * Checks whether a number is verified or not.
+ * @param {Number} mobile Mobile Number to verify
+ */
+let isNumberVerified = async (mobile) => {
+
+    let doc = await findQuery.findOne('OTP', { mobileNumber: mobile }, null, null, null);
+    return doc.isVerified;
+
+} // END isNumberVerified
+
+
+/**
+ * Save User address.
+ * @param {{}} req Request with body parameters
+ ** req.body.address - { areaAndStreet: string, cityOrDistrictOrTown: string, state: string, locality: string,
+ *               pincode: string, addressType: string }
+ */
+let saveUserAddress = (req, res) => {
+
+    let userId = req.body.userId;
+    let address = JSON.parse(req.body.address);
+    let reqdParams = ['name', 'mobile', 'areaAndStreet', 'cityOrDistrictOrTown', 'state', 'locality', 'pincode', 'addressType'];
+
+    // Validate the request body parameters
+    let apiResponse = validation.validateParams(address, reqdParams);
+    if (!userId || apiResponse.error) {
+        res.send(apiResponse);
+        return;
+    }
+
+    let upsertData = new UserModel({
+        addressList: [address],
+        lastModifiedOn: new Date()
+    });
+
+    let upsertOptions = {
+        upsert: true,
+        properties: ['addressList', 'lastModifiedOn'],
+        overwriteArray: false
+    };
+
+    findQuery.findOne('User', { userId: userId }, upsertData, upsertOptions, false)
+    .then((doc) => {
+        let apiResponse = Response.generate(false, 'Address saved successfully!!', 200, doc)
+        res.send(apiResponse)
+    })
+    .catch((err) => {
+        console.log(err)
+        res.send(err)
+    })
+
+}
+
+
 module.exports = {
     signup: signup,
     login: login,
@@ -446,5 +519,7 @@ module.exports = {
     forgotPassword: forgotPassword,
     resetPassword: resetPassword,
     sendOTP: sendOTP,
-    verifyOTP: verifyOTP
+    verifyOTP: verifyOTP,
+    isNumberVerified: isNumberVerified,
+    saveUserAddress: saveUserAddress
 }

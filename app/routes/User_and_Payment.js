@@ -30,6 +30,8 @@ let setRouter = (app) => {
 
     app.post(baseUrl+'/users/reset-password/:userId/:authToken', authMiddleware.isUserAuthorized, userManagementController.resetPassword);
 
+    app.post(baseUrl+'/users/userAddresses', userManagementController.saveUserAddress)
+
     /* Routes related to Miscellaneous */
     app.get(baseUrl+'/getCaptcha', Captcha.getCaptcha)
 

@@ -130,24 +130,21 @@ mongoose.connection.on('open', function (err) {
 
 
 ////////////////////////////
-/*
-let foo = (op) => {
-  return (op == true) ? Promise.resolve('success') : Promise.reject('failure');
-}
 
-let test = async (value) => {
-	let prom1 = await foo(value);
-  
-  console.log('prom1:', prom1);
-  return Promise.resolve('foo() resolved')
-}
+/*------------------------
+(() => {
+  function addToArray(arr, itemsArr) {
+    for(let i=0; i<itemsArr.length; i++) {
+      arr.push(itemsArr[i]);
+    }
+  }
 
-test(false)
-.then((resolveVal) => {
-	console.log('resolved value:', resolveVal)
-})
-.catch((error) => {
-	console.log('error:', error);
-})
+  function removeFromArray(arr, ) {
 
-*/
+  }
+  let arr1 = ['nick', 'sick'];
+  addToArray(arr1, ['pickle']);
+  console.log(arr1)
+
+})();
+//------------------------*/

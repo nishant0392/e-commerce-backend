@@ -6,8 +6,14 @@ const logger = require('../../lib/loggerLib')
 /** Finds a document and if found, updates it with upsertData in case 'insertOnlyIfNotFound' option is set to
    false, otherwise simply returns it.
    If not found, inserts 'upsertData' as a new document if 'upsertData' exists and 'upsert' option is set to
-   true, otherwise simply returns with a 404 response. */
-let findOne = (Model, query, upsertData, upsert, insertOnlyIfNotFound) => {
+   true, otherwise simply returns with a 404 response. 
+   @param {string} Model Query Model
+   @param {} query Query object
+   @param {{}} upsertData Data to upsert
+   @param {{ upsert: boolean, properties: {}, overwriteArray: boolean }} upsertOptions Upsert options 
+   @param {boolean} insertOnlyIfNotFound if true, new document is created only if no document exists.
+*/
+let findOne = (Model, query, upsertData, upsertOptions, insertOnlyIfNotFound) => {
 
     const QueryModel = mongoose.model(Model);
     let apiResponse = {};
@@ -23,7 +29,7 @@ let findOne = (Model, query, upsertData, upsert, insertOnlyIfNotFound) => {
             else if (util.isEmpty(document)) {
 
                 // insert a new document when not found
-                if (upsert && upsertData) {
+                if (upsertOptions.upsert && upsertData) {
                     upsertData.save((error, savedDocument) => {
                         if (error) {
                             console.log(error)
@@ -54,11 +60,11 @@ let findOne = (Model, query, upsertData, upsert, insertOnlyIfNotFound) => {
 
                     if (upsertData instanceof QueryModel) {
                         let upsertDataObj = upsertData.toObject();
-                        util.updateDocument(document, upsertDataObj, ['_id', 'userId', '__v'], true);
+                        util.updateDocument(document, upsertDataObj, upsertOptions.properties, upsertOptions.overwriteArray);
                     }
 
                     else if(upsertData instanceof Object)
-                        util.updateDocument(document, upsertData, ['_id', 'userId', '__v'], true);
+                        util.updateDocument(document, upsertData, upsertOptions.properties, upsertOptions.overwriteArray);
 
                     document.save((error, savedDocument) => {
                         if (error) {
