@@ -90,7 +90,7 @@ let getAllItems = (req, res) => {
             res.send(err)
         })
 
-}; // END getAllItems()
+} // END getAllItems()
 
 
 let setAllItems = (req, res) => {

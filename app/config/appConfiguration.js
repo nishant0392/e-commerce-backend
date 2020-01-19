@@ -1,6 +1,7 @@
 const dotenv = require('dotenv').config()
 
 let appConfig = {};
+
 appConfig.port = process.env.PORT;
 appConfig.env = process.env.NODE_ENV;
 appConfig.allowedCorsOrigin = [
@@ -10,7 +11,7 @@ appConfig.db = {
   uri: process.env.DB_URI
 }
 appConfig.apiVersion = '/api/v2';
-appConfig.appHost = "N-KART"
+appConfig.appHost = "N-Kart"
 
 
 module.exports = {

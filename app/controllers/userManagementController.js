@@ -350,7 +350,7 @@ let sendOTP = (req, res) => {
 
         let _mobile = Number(mobile);
         let OTP = generateOTP();
-        let message = `${OTP} is your N-Kart code and is valid for 10 minutes. Do not share the OTP with anyone.`;
+        let message = `${OTP} is your ${appConfig.appHost} code and is valid for 10 minutes. Do not share the OTP with anyone.`;
 
         // send OTP
         SMSLib.sendSMS(message, _mobile)

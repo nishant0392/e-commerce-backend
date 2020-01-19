@@ -42,17 +42,19 @@ let sendSMS = (message, receiverNo) => {
 
             //the whole response has been received, so we just print it out here
             response.on('end', function () {
-                
+
                 let responseObj = JSON.parse(str);
-             
+                console.log('response', responseObj)
                 if (responseObj.status === "success")
                     resolve(responseObj)
                 else
                     reject(responseObj)
             });
 
-        }).end();
-
+        }).on("error", (err) => {
+            console.log("Error: " + err.message);
+            reject(err)
+        });
     })
 
 } // END sendSMS

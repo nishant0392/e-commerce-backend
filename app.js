@@ -45,11 +45,10 @@ app.all('*', function (req, res, next) {
     "http://nishant-kumar.com", "https://nishant0392.github.io"
   ];
   var origin = req.headers.origin;
-  if(allowedOrigins.indexOf(origin) > -1){
-       res.setHeader('Access-Control-Allow-Origin', origin);
+  if (allowedOrigins.indexOf(origin) > -1) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
   }
-  //res.header("Access-Control-Allow-Origin", "http://localhost:4200", "http://www.nishant-kumar.com", 
-  // "http://nishant-kumar.com");
+
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
   res.header('Access-Control-Allow-Credentials', true);
