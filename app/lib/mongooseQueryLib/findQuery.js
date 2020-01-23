@@ -29,7 +29,7 @@ let findOne = (Model, query, upsertData, upsertOptions, insertOnlyIfNotFound) =>
             else if (util.isEmpty(document)) {
 
                 // insert a new document when not found
-                if (upsertOptions.upsert && upsertData) {
+                if (upsertOptions && upsertOptions.upsert && upsertData) {
                     upsertData.save((error, savedDocument) => {
                         if (error) {
                             console.log(error)

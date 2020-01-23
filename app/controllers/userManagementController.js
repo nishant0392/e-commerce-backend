@@ -42,7 +42,7 @@ let saveToken = async (tokenDetails) => {
         tokenGenerationTime: time.now()
     })
 
-    let queryResponse = await findQuery.findOne('Auth', { userId: userId }, newAuthToken, true, false);
+    let queryResponse = await findQuery.findOne('Auth', { userId: userId }, newAuthToken, { upsert: true, properties: ['authToken', 'tokenSecret', 'tokenGenerationTime'] }, false);
 
     return queryResponse;
 
@@ -67,7 +67,7 @@ let signup = (req, res) => {
 
         }) // end new User model
 
-        let queryResponse = findQuery.findOne('User', { mobileNumber: req.body.mobile }, newUser, true, true);
+        let queryResponse = findQuery.findOne('User', { mobileNumber: req.body.mobile }, newUser, { upsert: true }, true);
         queryResponse.then((userAccount) => {
             if (userAccount.userId !== newUser.userId) {
                 let apiResponse = Response.generate(true, 'Signup Failed!! User already exists with this number.', 403, null);
@@ -154,7 +154,7 @@ let validateLogin = async (loginType, email_OR_mobile, password) => {
  * function for login.
  */
 let login = (req, res) => {
-
+console.log(req.body)
     // validate the request body parameters
     if (!req.body.password || !(req.body.email || req.body.mobile)) {
         let apiResponse = Response.generate(true, 'One or More Parameters were missing.', 400, null);
@@ -190,7 +190,7 @@ let login = (req, res) => {
         .catch((err) => {
             logger.error('Error Handler caught error', 'userManagementController: login()', 10)
             console.log('Error:', err);
-            res.status(err.status).send(err);
+            res.send(err);
         })
 
 } // end login()
@@ -244,7 +244,7 @@ let forgotPassword = (req, res) => {
                         userId: userId,
                         userName: userName,
                         authToken: tokenDetails.authToken,
-                        url: process.env.NODE_ENV === 'development' ? 'http://localhost:4200' : 'n-kart.nishant-kumar.com'
+                        url: process.env.NODE_ENV === 'development' ? 'http://localhost:4200' : 'http://nishant-kumar.com'
                     }
                     // Send Email
                     Mailer.sendEmail('reset-password.ejs', viewData, emailOptions)
@@ -284,7 +284,7 @@ let resetPassword = (req, res) => {
 
     let hashPassword = bcryptLib.hashPassword(req.body.password);
     let queryResponse = findQuery.findOne('User', { userId: req.params.userId }, { password: hashPassword, lastModifiedOn: time.now() },
-        false, null);
+        { upsert: false }, null);
 
     queryResponse.then((userDetails) => {
         let userDetailsObj = userDetails.toObject();
@@ -366,7 +366,7 @@ let sendOTP = (req, res) => {
                 })
 
                 // Save OTP 
-                let queryResponse = findQuery.findOne('OTP', { mobileNumber: _mobile }, newOTP, true, false);
+                let queryResponse = findQuery.findOne('OTP', { mobileNumber: _mobile }, newOTP, {upsert: true, properties: ['OTP', 'OTP_GenerationTime', 'OTP_ExpirationTime']}, false);
                 queryResponse.then(
                     (resolveValue) => {
                         console.log('--OTP Sent and Saved:', resolveValue)
@@ -433,7 +433,7 @@ let verifyOTP = (req, res) => {
                 }
 
                 // update the row (mark number as verified)
-                findQuery.findOne('OTP', { mobileNumber: mobile, OTP: OTP }, { isVerified: true }, true, null)
+                findQuery.findOne('OTP', { mobileNumber: mobile, OTP: OTP }, { isVerified: true }, { upsert: true, properties: ['isVerified']}, null)
                     .then(() => {
                         apiResponse = Response.generate(false, 'Number verified successfully!!', 200, null);
                         res.send(apiResponse)

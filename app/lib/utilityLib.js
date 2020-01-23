@@ -114,12 +114,15 @@ let deleteProperties = (object, properties) => {
   * Update document with given object's properties value.
   * @param {Document} document Mongoose Document
   * @param {{}} object Object with which to update the document
-  * @param {string[]} properties Properties of the document that are to be updated
+  * @param {string[]} properties Properties of the document that are to be updated. If null, update all.
   * @param {boolean} overwriteArray If property's value is an Array, whether to overWrite or not. If not, merge it. (default: false)
   */
 let updateDocument = (document, object, properties, overwriteArray) => {
 
   let documentObj = document.toObject();
+
+  if(!properties) 
+   properties = Object.keys(object);
 
   // Assign the selected properties
   for (let prop of properties) {
