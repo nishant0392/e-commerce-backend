@@ -9,6 +9,7 @@ const CartModel = mongoose.model('Cart');
  * @param {string} req.body.userId User ID
  * @param {string} req.body.cartItems Cart Items
  * @param {string} req.body.savedForLaterItems Saved For Later Items
+ * @param {string} req.body.overWrite If 'false', no overwrite allowed on arrays. 
  */
 let addToCart = (req, res) => {
 

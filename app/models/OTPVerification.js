@@ -16,6 +16,10 @@ const OTPVerificationSchema = new Schema({
     type: Number,
     default: new Date().getTime() + 10*60*1000  
   },
+  attemptsRemaining: {
+    type: Number,
+    default: 4
+  },
   isVerified: {
     type: Boolean,
     default: false

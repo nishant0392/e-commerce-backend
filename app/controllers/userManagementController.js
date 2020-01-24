@@ -154,7 +154,7 @@ let validateLogin = async (loginType, email_OR_mobile, password) => {
  * function for login.
  */
 let login = (req, res) => {
-console.log(req.body)
+    console.log(req.body)
     // validate the request body parameters
     if (!req.body.password || !(req.body.email || req.body.mobile)) {
         let apiResponse = Response.generate(true, 'One or More Parameters were missing.', 400, null);
@@ -350,7 +350,7 @@ let sendOTP = (req, res) => {
 
         let _mobile = Number(mobile);
         let OTP = generateOTP();
-        let message = `${OTP} is your ${appConfig.appHost} code and is valid for 10 minutes. Do not share the OTP with anyone.`;
+        let message = `${OTP} is your ${appConfig.appHost} code and is valid for 5 minutes. Do not share the OTP with anyone.`;
 
         // send OTP
         SMSLib.sendSMS(message, _mobile)
@@ -362,11 +362,17 @@ let sendOTP = (req, res) => {
                     mobileNumber: _mobile,
                     OTP: OTP,
                     OTP_GenerationTime: currentTime,
-                    OTP_ExpirationTime: currentTime + 10 * 60 * 1000  // expiration period is 10 minutes
+                    OTP_ExpirationTime: currentTime + 5 * 60 * 1000,  // expiration period is 5 minutes
+                    attemptsRemaining: 4
                 })
 
+                let upsertOptions = {
+                    upsert: true,
+                    properties: ['OTP', 'OTP_GenerationTime', 'OTP_ExpirationTime', 'attemptsRemaining']
+                }
+
                 // Save OTP 
-                let queryResponse = findQuery.findOne('OTP', { mobileNumber: _mobile }, newOTP, {upsert: true, properties: ['OTP', 'OTP_GenerationTime', 'OTP_ExpirationTime']}, false);
+                let queryResponse = findQuery.findOne('OTP', { mobileNumber: _mobile }, newOTP, upsertOptions, false);
                 queryResponse.then(
                     (resolveValue) => {
                         console.log('--OTP Sent and Saved:', resolveValue)
@@ -411,31 +417,62 @@ let verifyOTP = (req, res) => {
         res.send(apiResponse); return;
     }
 
-    // compare OTP received with OTP sent(saved on DB) 
-    let queryResponse = findQuery.findOne('OTP', { mobileNumber: mobile, OTP: OTP }, null, null, null);
+    //--------------    Verify OTP    --------------
+    let queryResponse = findQuery.findOne('OTP', { mobileNumber: mobile }, null, null, null);
     queryResponse.then(
         (doc) => {
 
-            let apiResponse;
+            let apiResponse, db_OTP = doc.OTP, db_OTP_ExpirationTime = doc.OTP_ExpirationTime,
+                db_attemptsRemaining = doc.attemptsRemaining;
 
             if (doc.isVerified) {
                 // Number already verified
                 apiResponse = Response.generate(true, 'Number already verified!!', 401, null);
                 res.send(apiResponse)
             }
+
             else {
-                // Number not verified yet
+                //-----  Number not verified yet  -----
+
+                //--> Check the validity of OTP
+
+                if (db_attemptsRemaining < 1) {
+                    // No attempts remaining
+                    apiResponse = Response.generate(true, 'Sorry!! You have reached maximum no. of attempts.', 403, null);
+                    res.send(apiResponse); return;
+                }
+
                 let currentTime = new Date().getTime();
-                if (currentTime > doc.OTP_ExpirationTime) {
+                if (currentTime > db_OTP_ExpirationTime) {
                     // OTP has expired
                     apiResponse = Response.generate(true, 'OTP has expired!!', 403, null);
                     res.send(apiResponse); return;
                 }
 
-                // update the row (mark number as verified)
-                findQuery.findOne('OTP', { mobileNumber: mobile, OTP: OTP }, { isVerified: true }, { upsert: true, properties: ['isVerified']}, null)
-                    .then(() => {
-                        apiResponse = Response.generate(false, 'Number verified successfully!!', 200, null);
+                //--> Compare received OTP with OTP saved on database
+                let upsertOptions = { upsert: true };
+                let upsertData = {
+                    attemptsRemaining: (db_attemptsRemaining > 0) ? (db_attemptsRemaining - 1) : 0,
+                    isVerified: true
+                }
+
+                let is_OTP_Matched = (OTP === db_OTP);
+
+                // If OTP doesn't match, decrement the no. of attempts remaining.
+                if (!is_OTP_Matched) upsertOptions.properties = ['attemptsRemaining'];
+
+                // OTP is matched
+                else upsertOptions.properties = ['attemptsRemaining'];
+
+                //--> Update the database
+                findQuery.findOne('OTP', { mobileNumber: mobile }, upsertData, upsertOptions, null)
+                    .then((updatedDoc) => {
+                        if (updatedDoc.isVerified) 
+                            apiResponse = Response.generate(false, 'Number verified successfully!!', 200, null);
+                        
+                        else if (!is_OTP_Matched) 
+                            apiResponse = Response.generate(true, 'Invalid OTP', 404, { attemptsRemaining: updatedDoc.attemptsRemaining });
+                        
                         res.send(apiResponse)
                     })
                     .catch((err) => {
@@ -447,12 +484,7 @@ let verifyOTP = (req, res) => {
         })
         .catch((error) => {
             console.log(error)
-            if (error.status === 404) {
-                apiResponse = Response.generate(true, 'Invalid OTP', 404, null);
-                res.send(apiResponse)
-            }
-            else
-                res.send(error)
+            res.send(error)
         })
 } // END verifyOTP
 
@@ -500,14 +532,14 @@ let saveUserAddress = (req, res) => {
     };
 
     findQuery.findOne('User', { userId: userId }, upsertData, upsertOptions, false)
-    .then((doc) => {
-        let apiResponse = Response.generate(false, 'Address saved successfully!!', 200, doc)
-        res.send(apiResponse)
-    })
-    .catch((err) => {
-        console.log(err)
-        res.send(err)
-    })
+        .then((doc) => {
+            let apiResponse = Response.generate(false, 'Address saved successfully!!', 200, doc)
+            res.send(apiResponse)
+        })
+        .catch((err) => {
+            console.log(err)
+            res.send(err)
+        })
 
 }
 
