@@ -145,7 +145,7 @@ let validateLogin = async (loginType, email_OR_mobile, password) => {
     }
 
     logger.info("Login validation successful.", "userManagementController: validateLogin()", 10);
-    Promise.resolve(userDetailsObj);
+    return Promise.resolve(userDetailsObj);
 
 } // END validateLogin()
 
@@ -154,7 +154,7 @@ let validateLogin = async (loginType, email_OR_mobile, password) => {
  * function for login.
  */
 let login = (req, res) => {
-    console.log(req.body)
+    
     // validate the request body parameters
     if (!req.body.password || !(req.body.email || req.body.mobile)) {
         let apiResponse = Response.generate(true, 'One or More Parameters were missing.', 400, null);
@@ -175,8 +175,8 @@ let login = (req, res) => {
 
     // validate Login
     validateLogin(loginType, email_OR_mobile, req.body.password)
-        .then(generateToken)
-        .then(saveToken)
+        .then((userDetails) => generateToken(userDetails))
+        .then((tokenDetails) => saveToken(tokenDetails))
         .then((resolveData) => {
             let dataToBeSent = {
                 userId: resolveData.userId,

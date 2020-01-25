@@ -112,7 +112,13 @@ let setAllItems = (req, res) => {
         lastModifiedOn: time.now()
     })
 
-    let queryResponse = findQuery.findOne('ProductList', { category: productCategory, brand: productBrand }, upsertData, true, false);
+    let upsertOptions = {
+        upsert: true,
+        properties: ['listOfItems', 'lastModifiedOn'],
+        overwriteArray: true
+    }
+
+    let queryResponse = findQuery.findOne('ProductList', { category: productCategory, brand: productBrand }, upsertData, upsertOptions, false);
     queryResponse.then((resolveVal) => {
         console.log('resolveVal----->>', resolveVal.listId, resolveVal.category)
         res.send(Response.generate(false, 'Items saved successfully', 200, resolveVal))

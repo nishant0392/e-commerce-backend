@@ -33,8 +33,7 @@ let isAuthorized = (req, res, next) => {
                         res.send(apiResponse)
                     }
                     else {
-
-                        req.user = { userId: decoded.data.userId }
+                        req.user = { userId: decoded.data.userId };
                         next()
                     }
                 });// end verify token
@@ -47,6 +46,7 @@ let isAuthorized = (req, res, next) => {
         res.send(apiResponse)
     }
 }
+
 
 let isUserAuthorized = (req, res, next) => {
     let authToken = req.params.authToken || req.query.authToken || req.body.authToken || req.header('authToken');

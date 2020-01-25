@@ -24,7 +24,7 @@ let setRouter = (app) => {
 
     app.post(baseUrl+'/users/login', userManagementController.login);
 
-    app.post(baseUrl+'/users/logout', authMiddleware.isAuthorized, userManagementController.logout);
+    app.get(baseUrl+'/users/logout', authMiddleware.isAuthorized, userManagementController.logout);
 
     app.post(baseUrl+'/users/forgot-password', userManagementController.forgotPassword);
 
