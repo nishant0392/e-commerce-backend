@@ -10,11 +10,19 @@ let ProductListSchema = new Schema({
         unique: true,
         required: true
     },
+    listOfItems_partial: {
+        type: Array,
+        default: []
+    },
     listOfItems: {
         type: Array,
         default: []
     },
     category: {
+        type: String,
+        default: ''
+    },
+    subcategory: {
         type: String,
         default: ''
     },

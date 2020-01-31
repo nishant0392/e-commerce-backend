@@ -20,16 +20,16 @@
 <body>
 
     <div>
-        <img src="/assets/images/payumoney.png" />
+        <img src="/payumoney.png" />
     </div>
     <div>
         <h3>Transaction Details:</h3>
     </div>
 
-    <div class="dv">
+    <!--div class="dv">
         <span class="text"><label>Merchant Key:</label></span>
         <span><%= key %></span>
-    </div>
+    </div-->
 
     <div class="dv">
         <span class="text"><label>Transaction/Order ID:</label></span>
@@ -51,10 +51,10 @@
         <span><%= firstname %></span> <span><%= lastname %></span>
     </div>
 
-    <div class="dv">
+    <!--div class="dv">
         <span class="text"><label>Email ID:</label></span>
         <span><%= email %></span>
-    </div>
+    </div-->
 
     <div class="dv">
         <span class="text"><label>Mihpayid:</label></span>
@@ -78,7 +78,7 @@
     <br />
     <br />
     <div class="dv">
-        <span class="text"><a href="http://localhost:4200" alt="New Order">New Order</a></span>
+        <span class="text"><a href="<%= homepage_url %>" alt="New Order">New Order</a></span>
     </div>
 
 </body>

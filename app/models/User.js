@@ -12,11 +12,11 @@ let UserSchema = new Schema({
     },
     firstName: {
         type: String,
-        default: ''
+        default: 'Flipkart'
     },
     lastName: {
         type: String,
-        default: ''
+        default: 'Customer'
     },
     countryCode: {
         type: String,

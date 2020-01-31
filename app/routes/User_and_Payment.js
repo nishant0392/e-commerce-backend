@@ -30,10 +30,14 @@ let setRouter = (app) => {
 
     app.post(baseUrl+'/users/reset-password/:userId/:authToken', authMiddleware.isUserAuthorized, userManagementController.resetPassword);
 
-    app.post(baseUrl+'/users/userAddresses', userManagementController.saveUserAddress)
+    app.post(baseUrl+'/users/userAddress', userManagementController.saveUserAddress);
+
+    app.get(baseUrl+'/users/details', userManagementController.getUserDetails);
 
     /* Routes related to Miscellaneous */
-    app.get(baseUrl+'/getCaptcha', Captcha.getCaptcha)
+    app.get(baseUrl+'/captcha/get', Captcha.getCaptcha);
+
+    app.get(baseUrl+'/captcha/verify', Captcha.verifyCaptcha)
 
     app.post(baseUrl+'/sendOTP', userManagementController.sendOTP)   
 

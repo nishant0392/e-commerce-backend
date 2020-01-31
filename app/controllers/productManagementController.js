@@ -1,5 +1,4 @@
 const findQuery = require('../lib/mongooseQueryLib/findQuery');
-const shortid = require('shortid');
 const time = require('../lib/timeLib');
 const Response = require('../lib/generateResponseLib');
 const mongoose = require('mongoose');
@@ -7,35 +6,26 @@ const ProductListModel = mongoose.model('ProductList');
 
 /**
  * Returns the list of product items as resolved value, error response if rejected.
- * @param {string} productCategory Product category
- * @param {string} productBrand Product Brand
- * @returns List of product Items if promise is resolved, error response otherwise.
+ * @param {string} listId List ID of product item
+ * @returns List of product items if promise is resolved, error response otherwise.
  */
-let getProductItems = (productCategory, productBrand) => {
-
-    let responseAsPromise
-        = findQuery.findOne(
-            'ProductList', { category: productCategory, brand: productBrand }, null, null, null
-        );
-
-    return responseAsPromise;
+let getProductItems = (listId) => {
+    return findQuery.findOne('ProductList', { listId: listId }, null, null, null);
 }
 
 
 /**
  * Returns details of a single item.
- * @param {string} req.query.category category of product item
- * @param {string} req.query.brand brand of product item
+ * @param {string} req.query.listId List ID of product item
  * @param {string} req.query.pid product ID
  * @returns Response object containing item details or error response.
  */
 let getSingleItem = (req, res) => {
 
-    let productCategory = req.query.category;
-    let productBrand = req.query.brand;
+    let listId = req.query.listId;
     let productId = req.query.pid;
 
-    if (!productCategory || !productBrand || !productId) {
+    if (!listId || !productId) {
         let apiResponse = Response.generate(true, 'One or More Parameters were missing.', 400, null);
         res.send(apiResponse); return;
     }
@@ -43,18 +33,31 @@ let getSingleItem = (req, res) => {
     // Extract the index of item from the given 'productId'.
     let extractItemIndex = (productId) => {
 
-        let extractedString = productId.match(/N\d+/)[0];
-        if (extractedString) {
+        let extractedData = productId.match(/N\d+/);
+        if (extractedData) {
+            let extractedString = extractedData[0];
             let extractedIndex = Number(extractedString.substring(1));
             return extractedIndex;
         }
 
     }
 
-    getProductItems(productCategory, productBrand)
+    getProductItems(listId)
         .then((productList) => {
             let index = extractItemIndex(productId);
-            res.send(Response.generate(false, 'Item retrieved successfully', 200, productList.listOfItems[index]))
+
+            if (0 <= index && index < productList.listOfItems.length) {
+
+                let item = productList.listOfItems[index];
+
+                if (item && item.primaryDetailsOfItem && item.primaryDetailsOfItem.pid === productId) {
+                    res.send(Response.generate(false, 'Item retrieved successfully', 200, productList.listOfItems[index]))
+                    return;
+                }
+
+            }
+
+            res.send(Response.generate(true, 'Item not found', 404, null))
         })
         .catch((err) => {
             console.log(err)
@@ -65,60 +68,85 @@ let getSingleItem = (req, res) => {
 
 
 /**
- * Returns all items of a particular product.
- * @param {string} req.query.category category of product item
- * @param {string} req.query.brand brand of product item
+ * Returns all items of a particular product (uniquely identified by listId). 
+ * For example, category = 'Mobiles' &  brand = 'Redmi' <---> listId = 'LST****'.
+ * @param {string} req.query.listId List ID of product item
  * @returns Response object containing all items of the particular product or error response.
  */
-let getAllItems = (req, res) => {
+let getItems = (req, res) => {
 
-    let productCategory = req.query.category;
-    let productBrand = req.query.brand;
-
-    if (!productCategory || !productBrand) {
-        let apiResponse = Response.generate(true, 'One or More Parameters were missing.', 400, null);
+    if (!req.query.listId) {
+        let apiResponse = Response.generate(true, 'listId parameter is missing.', 400, null);
         res.send(apiResponse); return;
     }
 
-    getProductItems(productCategory, productBrand)
+    getProductItems(req.query.listId)
         .then((productList) => {
-            console.log('product list category & brand -->>', productList.category, productList.brand)
-            res.send(Response.generate(false, 'Items retrieved successfully', 200, productList))
+            let dataToSend = {
+               category: productList.category,
+               subcategory: productList.subcategory,
+               items: productList.listOfItems_partial
+            }
+            res.send(Response.generate(false, 'Items retrieved successfully', 200, dataToSend))
         })
         .catch((err) => {
             console.log(err)
             res.send(err)
         })
 
-} // END getAllItems()
+} // END getItems()
 
 
-let setAllItems = (req, res) => {
-    let productCategory = req.body.category;
-    let productBrand = req.body.brand;
-    let Items = JSON.parse(req.body.items);
+/**
+ * Save product items on database (Restricted access).
+ * @param {*} req.body.adminId Administrator ID
+ * @param {*} req.body.password Administrator password
+ * @param {*} req.body.listId List ID
+ * @param {*} req.body.category Product category
+ * @param {*} req.body.brand Product brand
+ * @param {*} req.body.items_partial Partial details of Product items to add
+ * @param {*} req.body.items Product items to add
+ */
+let setItems = (req, res) => {
 
-    if (!productCategory || !productBrand || !Items) {
-        let apiResponse = Response.generate(true, 'One or More Parameters were missing.', 400, null);
-        res.send(apiResponse);
+    let admin_id = req.body.adminId;
+    let admin_pass = req.body.password;
+
+    // Check if it's administrator
+    if (admin_id !== process.env.ADMIN_ID || admin_pass !== process.env.ADMIN_PASS) {
+        res.send(Response.generate(true, 'Unauthorized access!!', 403, null));
         return;
     }
 
+    let listId = req.body.listId;
+    let productCategory = req.body.category;
+    let productSubcategory = req.body.subcategory;
+    let productBrand = req.body.brand;
+    let Items_partial = JSON.parse(req.body.items_partial);
+    let Items = JSON.parse(req.body.items);
+
+    if (!listId || !productCategory || !productSubcategory || !productBrand || !Items_partial || !Items) {
+        let apiResponse = Response.generate(true, 'One or More Parameters were missing.', 400, null);
+        res.send(apiResponse); return;
+    }
+
     let upsertData = new ProductListModel({
-        listId: 'LST' + shortid.generate(),
+        listId: listId,
+        listOfItems_partial: Items_partial,
         listOfItems: Items,
         category: productCategory,
+        subcategory: productSubcategory,
         brand: productBrand,
         lastModifiedOn: time.now()
     })
 
     let upsertOptions = {
         upsert: true,
-        properties: ['listOfItems', 'lastModifiedOn'],
-        overwriteArray: true
+        properties: ['listOfItems_partial', 'listOfItems', 'lastModifiedOn'],
+        overwriteArray: (req.body.overwrite === 'false') ? false : true
     }
 
-    let queryResponse = findQuery.findOne('ProductList', { category: productCategory, brand: productBrand }, upsertData, upsertOptions, false);
+    let queryResponse = findQuery.findOne('ProductList', { listId: listId }, upsertData, upsertOptions, false);
     queryResponse.then((resolveVal) => {
         console.log('resolveVal----->>', resolveVal.listId, resolveVal.category)
         res.send(Response.generate(false, 'Items saved successfully', 200, resolveVal))
@@ -130,17 +158,9 @@ let setAllItems = (req, res) => {
 }
 
 
-let getItemDetails = (productName, productID) => {
-
-}
-
-
 module.exports = {
-    setAllItems: setAllItems,
-    getAllItems: getAllItems,
+    setItems: setItems,
+    getItems: getItems,
     getSingleItem: getSingleItem
 }
-
-
-
 

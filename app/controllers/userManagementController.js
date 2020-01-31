@@ -504,44 +504,75 @@ let isNumberVerified = async (mobile) => {
 /**
  * Save User address.
  * @param {{}} req Request with body parameters
+ ** req.body.userId - User ID
  ** req.body.address - { areaAndStreet: string, cityOrDistrictOrTown: string, state: string, locality: string,
  *               pincode: string, addressType: string }
  */
 let saveUserAddress = (req, res) => {
+  
+  let userId = req.body.userId;
+  let address = JSON.parse(req.body.address);
+  let reqdParams = ['name', 'mobile', 'areaAndStreet', 'cityOrDistrictOrTown', 'state', 'locality', 'pincode', 'addressType'];
 
-    let userId = req.body.userId;
-    let address = JSON.parse(req.body.address);
-    let reqdParams = ['name', 'mobile', 'areaAndStreet', 'cityOrDistrictOrTown', 'state', 'locality', 'pincode', 'addressType'];
+  // Validate the request body parameters
+  let apiResponse = validation.validateParams(address, reqdParams);
+  if (!userId || apiResponse.error) {
+      res.send(apiResponse);
+      return;
+  }
 
-    // Validate the request body parameters
-    let apiResponse = validation.validateParams(address, reqdParams);
-    if (!userId || apiResponse.error) {
-        res.send(apiResponse);
-        return;
-    }
+  let upsertData = new UserModel({
+      addressList: [address],
+      lastModifiedOn: new Date()
+  });
 
-    let upsertData = new UserModel({
-        addressList: [address],
-        lastModifiedOn: new Date()
-    });
+  let upsertOptions = {
+      upsert: true,
+      properties: ['addressList', 'lastModifiedOn'],
+      overwriteArray: true
+  };
 
-    let upsertOptions = {
-        upsert: true,
-        properties: ['addressList', 'lastModifiedOn'],
-        overwriteArray: false
-    };
-
-    findQuery.findOne('User', { userId: userId }, upsertData, upsertOptions, false)
-        .then((doc) => {
-            let apiResponse = Response.generate(false, 'Address saved successfully!!', 200, doc)
-            res.send(apiResponse)
-        })
-        .catch((err) => {
-            console.log(err)
-            res.send(err)
-        })
+  findQuery.findOne('User', { userId: userId }, upsertData, upsertOptions, false)
+      .then((doc) => { console.log(doc)
+          let apiResponse = Response.generate(false, 'Address saved successfully!!', 200, doc.userId)
+          res.send(apiResponse)
+      })
+      .catch((err) => {
+          console.log(err)
+          res.send(err)
+      })
 
 }
+
+
+/**
+  * Get User details.
+  */
+let getUserDetails = (req, res) => {
+
+    if(!req.query.userId) {
+        let apiResponse = Response.generate(true, 'userId parameter is missing!!', 400, null);   
+        res.send(apiResponse); return;
+    }
+
+    findQuery.findOne('User', { userId: req.query.userId }, null, null, null) 
+    .then((userDetails) => {
+        
+        let dataToSend = {
+            userId: userDetails.userId,
+            userName: userDetails.firstName + ' ' + userDetails.lastName,
+            mobile: userDetails.mobileNumber,
+            email: userDetails.email,
+            addressList: userDetails.addressList
+        }
+
+        res.send(Response.generate(false, 'User details retrieved successfully', 200, dataToSend))
+    })
+    .catch((err) => {
+        console.log(err)
+        res.send(err)
+    })
+} 
 
 
 module.exports = {
@@ -553,5 +584,6 @@ module.exports = {
     sendOTP: sendOTP,
     verifyOTP: verifyOTP,
     isNumberVerified: isNumberVerified,
-    saveUserAddress: saveUserAddress
+    saveUserAddress: saveUserAddress,
+    getUserDetails: getUserDetails
 }

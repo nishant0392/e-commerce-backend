@@ -46,7 +46,7 @@ payumoney.makePayment(paymentData, function(error, payment_redirection_link) {
       data: payment_redirection_link
       }; 
     res.send(successResponse)
-    console.log(successResponse)
+  //  console.log('success response', successResponse)
   }
 });
 } // makePayment_PayUMoney()
@@ -54,7 +54,7 @@ payumoney.makePayment(paymentData, function(error, payment_redirection_link) {
 
 
 let PayUMoneyResponseHandler = (req, res) => {
-   console.log('handler',req.body)
+   
     var key = req.body.key;
     var salt = req.body.salt;
     var txnid = req.body.txnid;
@@ -66,6 +66,8 @@ let PayUMoneyResponseHandler = (req, res) => {
     var mihpayid = req.body.mihpayid;
     var status = req.body.status;
     var response_hash = req.body.hash;
+    
+    var homepage_url = (process.env.NODE_ENV == "development") ? 'http://localhost:4200' : 'http://nishant-kumar.com';
 
     var keyString = key + '|' + txnid + '|' + amount + '|' + productinfo + '|' + firstname + '|' + email + '||||||||||';
     var keyArray = keyString.split('|');
@@ -76,20 +78,23 @@ let PayUMoneyResponseHandler = (req, res) => {
     cryp.update(reverseKeyString);
     var calculate_hash = cryp.digest('hex');
 
-    var message = 'Payment failed for Hash not verified...';
-    if (calculate_hash === response_hash)
-        message = 'Transaction Successful and Hash Verified...';
+    var message = 'Transaction Successful and Hash Verified...';
+    if (calculate_hash !== response_hash)
+        message = 'Payment failed for Hash not verified...';
+
+    if (status === "success") {
+        message = 'Transaction Successful !!';
+        fileToRender = 'PayUMoney_success.ejs';
+    }
+ 
+    else
+        fileToRender = 'PayUMoney_failure.ejs';
 
     let response_data = {
         key: key, salt: salt, txnid: txnid, amount: amount, productinfo: productinfo,
         firstname: firstname, lastname: lastname, email: email, mihpayid: mihpayid, status: status,
-        response_hash: response_hash, message: message
+        response_hash: response_hash, message: message, homepage_url: homepage_url
     };
-
-    if (status === "success")
-        fileToRender = 'PayUMoney_success.ejs';
-    else
-        fileToRender = 'PayUMoney_failure.ejs';
 
     res.render(path.join(__dirname, '..', 'public', 'views', fileToRender), response_data)
 

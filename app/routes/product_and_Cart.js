@@ -13,9 +13,9 @@ let setRouter = (app) => {
 
     /* Routes related to product management */
 
-    app.post(baseUrl + '/category/product/all', productManagementController.setAllItems)
+    app.post(baseUrl + '/category/product/all', productManagementController.setItems)
 
-    app.get(baseUrl + '/category/product/all', productManagementController.getAllItems)
+    app.get(baseUrl + '/category/product/all', productManagementController.getItems)
 
     app.get(baseUrl + '/category/product', productManagementController.getSingleItem)
 

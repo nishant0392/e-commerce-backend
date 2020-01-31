@@ -15,6 +15,14 @@ const AuthSchema = new Schema({
   tokenGenerationTime: {
     type: Date,
     default: time.now()
+  },
+  captcha: {
+    type: String,
+    default: ''
+  },
+  captcha_expirationTime: {
+    type: Number,
+    default: 0
   }
 })
 

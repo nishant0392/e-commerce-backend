@@ -7,31 +7,14 @@ const bodyParser = require('body-parser')
 const globalErrorMiddleware = require('./app/middlewares/appErrorHandler')
 const http = require('http')
 const mongoose = require('mongoose')
-const session = require('express-session')
-
 
 // middlewares
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-//app.use('/userAvatars', express.static('userAvatars'))
+app.use(bodyParser.json({limit: '20mb'}));
+app.use(bodyParser.urlencoded({ limit: '20mb', extended: true }));
+app.use(express.static(__dirname + '/app/public/images/'));
 
 // set the view engine to 'ejs'
 app.set('view engine', 'ejs');
-
-/** Session **/
-var sess = {
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true,
-  cookie: { maxAge: 60000 }
-};
-
-if (app.get('env') === 'production') {
-  app.set('trust proxy', 1)    // trust first proxy
-  sess.cookie.secure = true    // serve secure cookies
-}
-
-app.use(session(sess))
 
 app.use(globalErrorMiddleware.globalErrorHandler)
 
