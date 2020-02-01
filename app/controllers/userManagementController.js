@@ -462,7 +462,7 @@ let verifyOTP = (req, res) => {
                 if (!is_OTP_Matched) upsertOptions.properties = ['attemptsRemaining'];
 
                 // OTP is matched
-                else upsertOptions.properties = ['attemptsRemaining'];
+                else upsertOptions.properties = ['isVerified'];
 
                 //--> Update the database
                 findQuery.findOne('OTP', { mobileNumber: mobile }, upsertData, upsertOptions, null)
