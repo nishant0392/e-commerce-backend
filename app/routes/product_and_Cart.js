@@ -22,9 +22,9 @@ let setRouter = (app) => {
 
     /* Routes related to Cart */
 
-    app.post(baseUrl + '/cart/add', cartController.addToCart)
+    app.post(baseUrl + '/cart/add', authMiddleware.isAuthorized, cartController.addToCart)
 
-    app.get(baseUrl + '/cart/items', cartController.getUserCart)
+    app.get(baseUrl + '/cart/items', authMiddleware.isAuthorized, cartController.getUserCart)
 
 }
 

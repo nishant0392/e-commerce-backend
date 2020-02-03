@@ -2,7 +2,6 @@ const appConfig = require("../config/appConfiguration")
 const userManagementController = require('../controllers/userManagementController')
 const paymentController = require('../controllers/paymentController')
 const Captcha = require('../lib/CaptchaLib')
-const SMSLib = require('../lib/SMSLib')
 
 
 // Authorization Middlewares
@@ -14,7 +13,7 @@ let setRouter = (app) => {
 
     /* Routes related to Payment Management */
 
-    app.post(baseUrl+'/payment/payumoney', paymentController.makePayment_PayUMoney);
+    app.post(baseUrl+'/payment/payumoney', authMiddleware.isAuthorized, paymentController.makePayment_PayUMoney);
 
     app.post(baseUrl+'/response/payumoney', paymentController.PayUMoneyResponseHandler);
 
@@ -30,18 +29,18 @@ let setRouter = (app) => {
 
     app.post(baseUrl+'/users/reset-password/:userId/:authToken', authMiddleware.isUserAuthorized, userManagementController.resetPassword);
 
-    app.post(baseUrl+'/users/userAddress', userManagementController.saveUserAddress);
+    app.post(baseUrl+'/users/userAddress', authMiddleware.isAuthorized, userManagementController.saveUserAddress);
 
-    app.get(baseUrl+'/users/details', userManagementController.getUserDetails);
+    app.get(baseUrl+'/users/details', authMiddleware.isAuthorized, userManagementController.getUserDetails);
 
     /* Routes related to Miscellaneous */
-    app.get(baseUrl+'/captcha/get', Captcha.getCaptcha);
+    app.get(baseUrl+'/captcha/get', authMiddleware.isAuthorized, Captcha.getCaptcha);
 
-    app.get(baseUrl+'/captcha/verify', Captcha.verifyCaptcha)
+    app.get(baseUrl+'/captcha/verify', authMiddleware.isAuthorized, Captcha.verifyCaptcha)
 
-    app.post(baseUrl+'/sendOTP', userManagementController.sendOTP)   
+    app.post(baseUrl+'/sendOTP', authMiddleware.isAuthorized, userManagementController.sendOTP)   
 
-    app.post(baseUrl+'/verifyOTP', userManagementController.verifyOTP)    
+    app.post(baseUrl+'/verifyOTP', authMiddleware.isAuthorized, userManagementController.verifyOTP)    
     
 }
 
