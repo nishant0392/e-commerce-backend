@@ -17,7 +17,7 @@ let addToCart = (req, res) => {
 
         let oldLength = items.length;
 
-        if (oldLength < 2) return;
+        if (oldLength < 2) return false;
 
         // check if any cart item is duplicate
         let positionObj = {};
@@ -109,10 +109,14 @@ let addToCart = (req, res) => {
 
                     findQuery.findOne('Cart', { userId: userId }, _upsertData, upsertOptions, false)
                         .then((updatedDoc) => {
-                            console.log('updated doc ------>', updatedDoc)
                             let apiResponse = Response.generate(false, 'Items updated and saved successfully!!', 200, updatedDoc);
                             res.send(apiResponse)
                         })
+                }
+                
+                else {
+                    let apiResponse = Response.generate(false, 'Items saved successfully!!', 200, doc);
+                    res.send(apiResponse)
                 }
             }
 

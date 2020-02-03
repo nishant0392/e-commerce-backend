@@ -1,6 +1,7 @@
 const svgCaptcha = require('svg-captcha');
 const Response = require('../lib/generateResponseLib');
 const findQuery = require('../lib/mongooseQueryLib/findQuery');
+const AuthModel = require('../models/Auth');
 
 /**
  * Returns a captcha with SVG and text.
@@ -23,11 +24,15 @@ let getCaptcha = (req, res) => {
     var text = captcha.text;
     var expirationTime = new Date().getTime() + 300000;  // expiry time is 5 minutes
 
+    let upsertData = new AuthModel({
+         captcha: text,
+         captcha_expirationTime: expirationTime 
+    })
+
     // save captcha on database
     findQuery.findOne(
-        'Auth', { userId: req.query.userId },
-        { captcha: text, captcha_expirationTime: expirationTime },
-        { upsert: true, properties: ['captcha', 'captcha_expirationTime'] }, false
+        'Auth', { userId: req.query.userId }, upsertData,
+        { upsert: false, properties: ['captcha', 'captcha_expirationTime'] }, false
     )
         .then(() => {
             res.type('svg');
