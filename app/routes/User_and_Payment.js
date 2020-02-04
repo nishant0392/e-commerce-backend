@@ -38,9 +38,9 @@ let setRouter = (app) => {
 
     app.get(baseUrl+'/captcha/verify', authMiddleware.isAuthorized, Captcha.verifyCaptcha)
 
-    app.post(baseUrl+'/sendOTP', authMiddleware.isAuthorized, userManagementController.sendOTP)   
+    app.post(baseUrl+'/sendOTP', userManagementController.sendOTP)   
 
-    app.post(baseUrl+'/verifyOTP', authMiddleware.isAuthorized, userManagementController.verifyOTP)    
+    app.post(baseUrl+'/verifyOTP', userManagementController.verifyOTP)    
     
 }
 
